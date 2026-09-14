@@ -67,7 +67,18 @@ fn invoke(
             // 回调 id 只是占位：MockRuntime 下没有真正的 JS 回调。
             callback: CallbackFn(0),
             error: CallbackFn(1),
-            url: "http://tauri.localhost".parse().expect("合法 URL"),
+            // ★ URL 必须与 runtime 的"本地源"判定同构：Windows/Android 的本地协议
+            //   是 http://tauri.localhost，其余平台是 tauri://localhost。
+            //   写死一个，在另一个平台上 is_local_url() 就会返回 false，
+            //   ACL 会把所有命令拒之门外（报 "not allowed. Plugin not found"）。
+            //   这是 tauri::test 官方文档给的写法，两个平台都算本地源。
+            url: if cfg!(any(windows, target_os = "android")) {
+                "http://tauri.localhost"
+            } else {
+                "tauri://localhost"
+            }
+            .parse()
+            .expect("合法 URL"),
             body: InvokeBody::Json(args),
             headers: Default::default(),
             // 必须带上 invoke key，否则请求会在更早的一层就被拒 ——
