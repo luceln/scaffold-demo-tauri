@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "默认权限集：只开本应用需要的内核能力，不引入任何插件权限（fs/http/shell 一律没开）。",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

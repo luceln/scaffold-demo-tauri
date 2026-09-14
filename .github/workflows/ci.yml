@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# 同一分支上的旧运行自动取消 —— 连推三次不会白烧三份 CI 时间。
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    name: 静态检查 + 测试 + 构建
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v7
+
+      # pnpm 必须在 setup-node 之前：setup-node 的 cache: pnpm 需要先有 pnpm。
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: 安装 Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: pnpm
+
+      - name: 安装 Rust 工具链
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      # Tauri 在 Linux 上的系统依赖（官方 Prerequisites）。
+      # 缺任何一个都会在链接阶段报一堆找不到的 -lwebkit2gtk 之类。
+      - name: 安装 Tauri 的 Linux 系统依赖
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      - name: 缓存 Rust 构建产物
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: 安装前端依赖
+        # 锁文件必须已提交 —— 否则这里会失败，并在第一个 commit 上就提醒你。
+        run: pnpm install --frozen-lockfile
+
+      # 单一入口：与本地 `make ci` / `pnpm run ci` 完全同一条命令。
+      # 不要在这里罗列任务清单 —— 任务集合不同＝本地与 CI 的等价性是假的。
+      # 顺序在脚本里定死：前端 lint/typecheck/test/build（frontendDist 先于 cargo），
+      # 再 rust fmt/clippy/test/build。
+      - name: 检查与构建（pnpm run ci）
+        run: pnpm run ci

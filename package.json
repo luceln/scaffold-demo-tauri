@@ -1,0 +1,52 @@
+{
+  "name": "scaffold-demo-tauri",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "scaffold-demo-tauri —— Tauri 2 + Vue 3 桌面工具",
+  "author": "ailang",
+  "license": "MIT",
+  "packageManager": "pnpm@11.24.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "vue-tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "pnpm run lint && pnpm run typecheck && pnpm run test",
+    "rust:fmt": "cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check",
+    "rust:clippy": "cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings",
+    "rust:test": "cargo test --manifest-path src-tauri/Cargo.toml",
+    "rust:build": "cargo build --manifest-path src-tauri/Cargo.toml",
+    "ci": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build && pnpm run rust:fmt && pnpm run rust:clippy && pnpm run rust:test && pnpm run rust:build",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "2.3.2",
+    "@tauri-apps/api": "2.11.1",
+    "element-plus": "2.14.5",
+    "vue": "3.5.42"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@tauri-apps/cli": "2.11.4",
+    "@vitejs/plugin-vue": "6.0.8",
+    "eslint": "10.10.0",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-vue": "10.11.0",
+    "globals": "17.12.0",
+    "happy-dom": "20.14.3",
+    "prettier": "3.9.6",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.70.0",
+    "vite": "8.3.0",
+    "vitest": "5.0.0",
+    "vue-eslint-parser": "10.4.1",
+    "vue-tsc": "3.3.11"
+  }
+}

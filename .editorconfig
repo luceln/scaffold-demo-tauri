@@ -1,0 +1,33 @@
+# 全局基线 —— 全线 UTF-8 + LF（对应契约的 UTF-8 硬约定）。
+# 行尾必须锁 LF：这些文件在 Linux CI 上执行，CRLF 会让 Makefile 的 recipe
+# 带上 \r，make 报 "missing separator"。
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.{rs,toml}]
+indent_size = 4
+
+[Makefile]
+# Make 的 recipe **必须**是 tab，编辑器把它自动转成空格是最经典的坑。
+indent_style = tab
+
+[*.manifest]
+# ⚠️ app.manifest 的注释里**不能出现连续两个连字符**。
+# XML 规范禁止注释内出现 `--`；link.exe 通过 mt.exe 处理清单时因此失败，
+# 报的却是完全指不到原因的错：
+#   error c1010070: Failed to load and parse the manifest.
+#   LINK : fatal error LNK1327: 运行 mt.exe 期间出错
+# 顺手写下的 `cargo run --example` 这类片段就足够破坏整个链接。
+# 本文件同时保持纯 ASCII（注释用英文），少一个变量。
+indent_size = 2
+
+[*.md]
+# Markdown 里行尾两个空格是"硬换行"，不能被自动去掉。
+trim_trailing_whitespace = false

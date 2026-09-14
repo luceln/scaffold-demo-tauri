@@ -1,0 +1,31 @@
+# ---------- 依赖与构建产物 ----------
+node_modules/
+dist/
+src-tauri/target/
+# tauri-build 生成的 ACL schema —— 每次构建都会重写，不入库。
+src-tauri/gen/schemas/
+
+# ⚠️ 锁文件**要提交**，所以刻意不忽略 pnpm-lock.yaml 与 Cargo.lock。
+# 这是一个"应用"而不是"库"：锁文件保证 CI 与发布包用的是同一批依赖版本。
+# 生成项目后的第一件事就是把它们一起 commit（否则 CI 的 --frozen-lockfile 会失败）。
+
+# ---------- 密钥与本地配置（绝不入库）----------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# ---------- 编辑器 / 系统 ----------
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- 日志与产物 ----------
+*.log
+/coverage/

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+  Windows application manifest.
+
+  RULE: NEVER PUT A DOUBLE HYPHEN INSIDE AN XML COMMENT.
+
+  This looks like a trivial style rule. It is not. XML forbids the two-hyphen
+  sequence inside comments, and mt.exe (which link.exe invokes to process
+  /MANIFESTINPUT) reports the resulting parse error in a way that points
+  nowhere useful:
+
+      app.manifest : general error c1010070: Failed to load and parse the
+                     manifest. Windows cannot process the XML data.
+      LINK : fatal error LNK1327: error during running mt.exe
+
+  Nothing in that message mentions comments. One double hyphen buried deep in
+  a long comment is enough to break the entire link step. Measured with a 2x2
+  test against mt.exe directly:
+
+      ascii,     no double hyphen   -> OK
+      ascii,     double hyphen      -> FAIL
+      chinese,   no double hyphen   -> OK     (encoding is NOT the problem)
+      chinese,   double hyphen      -> FAIL
+
+  So UTF-8 without BOM is fine here. The double hyphen is the actual killer.
+  This file is kept ASCII-only anyway, purely to keep Windows tooling simple.
+
+  ===========================================================================
+  WHY THIS FILE EXISTS AT ALL
+  ===========================================================================
+
+  Without it, `cargo test` on Windows cannot even start: the process dies
+  immediately with 0xc0000139 STATUS_ENTRYPOINT_NOT_FOUND and no Rust level
+  error at all. Unit test hosts and example binaries crash identically, so it
+  is not a test harness problem.
+
+  Root cause: the Tauri WebView runtime calls comctl32.dll!TaskDialogIndirect.
+  That export exists only in comctl32 v6, and v6 is loaded only when the
+  program ships a manifest declaring a dependency on
+  Microsoft.Windows.Common-Controls 6.0.0.0. Otherwise the loader falls back
+  to System32\comctl32.dll (v5.82), which lacks the export.
+
+  Why tauri-build is not enough: it does emit this manifest, but through
+  embed-resource, which prints `cargo:rustc-link-arg-bins` (that applies only
+  to the bin target). Test hosts and examples never receive it.
+
+  So build.rs disables that half (WindowsAttributes::new_without_app_manifest)
+  and injects this file itself via the target agnostic pair
+  `cargo:rustc-link-arg=/MANIFEST:EMBED` and
+  `cargo:rustc-link-arg=/MANIFESTINPUT:<absolute path>`.
+-->
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <dependency>
+    <dependentAssembly>
+      <assemblyIdentity
+        type="win32"
+        name="Microsoft.Windows.Common-Controls"
+        version="6.0.0.0"
+        processorArchitecture="*"
+        publicKeyToken="6595b64144ccf1df"
+        language="*"
+      />
+    </dependentAssembly>
+  </dependency>
+
+  <!-- Declare per monitor DPI awareness, otherwise the window is bitmap scaled
+       and looks blurry on high DPI displays. -->
+  <application xmlns="urn:schemas-microsoft-com:asm.v3">
+    <windowsSettings>
+      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2</dpiAwareness>
+      <longPathAware xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">true</longPathAware>
+    </windowsSettings>
+  </application>
+</assembly>

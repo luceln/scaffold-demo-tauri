@@ -1,0 +1,69 @@
+[package]
+# 包名 = 用户填的 project_name（kebab-case 合法）。
+# ⚠️ 注意下面的 [lib] name 是**固定**的，不随包名变化 —— 见那里的注释。
+name = "scaffold-demo-tauri"
+version = "0.1.0"
+edition = "2024"
+description = "scaffold-demo-tauri —— Tauri 2 + Vue 3 桌面工具"
+license = "MIT"
+# authors 刻意留空：author 变量可以是空串，而 Cargo 的 authors 写成空数组
+# 只是一行噪音（还会让 `cargo publish` 的元数据变难看）。
+# 最低支持的 Rust 版本。
+# 取 1.85.0 而不是 tauri 的 MSRV 1.77.2 —— **edition 2024 本身就要求 ≥1.85.0**，
+# 写低了 cargo 会直接拒绝解析 manifest（"rust-version is incompatible with
+# the version required by the specified edition"）。真正的下限是两个约束的大者。
+rust-version = "1.85.0"
+
+[lib]
+# ★ 固定库名，**不**写成 scaffold-demo-tauri。
+#
+# 为什么：project_name 是 kebab-case（`my-tool`），而 Rust 的 crate 标识符
+# 不允许连字符 —— `use my-tool::...` 是非法的。正常做法是"连字符→下划线"变换，
+# 但契约的渲染层是**纯占位符替换**，没有变换能力（DESIGN.md §4 / 摩擦点 F4）。
+#
+# 与其让模板依赖一个不存在的能力，不如把库名钉死成一个常量感的名字：
+# Tauri 官方模板同样用 `PROJECT_NAME_lib` 这种固定形态。代价是 lib 名不带项目名，
+# 收益是**整个骨架不依赖任何名称变换**。
+name = "tauri_app_lib"
+# rlib 给集成测试用；cdylib/staticlib 是 Tauri 给移动端与 C 侧预留的产物形态。
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+# 二进制名可以带连字符（这是文件名，不是 Rust 标识符），所以这里直接用包名。
+name = "scaffold-demo-tauri"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2.6.3", features = [] }
+
+[dependencies]
+tauri = { version = "2.11.5", features = [] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+# 稳定错误码（AppError）。手写 Display/Error 是几十行样板，不值得。
+thiserror = "2.0.20"
+# bundled = 把 SQLite 源码一起编进来（内置 3.53.2）。
+# 选择 bundled 而不是链接系统库，是为了让生成物**没有系统级前置依赖**：
+# 换一台机器 `cargo build` 就直接能用，这对模板尤其重要（CI 与本地行为一致）。
+rusqlite = { version = "0.40.2", features = ["bundled"] }
+# 日志门面（唯一出口）。裸打印被 lib.rs 的 deny 与 clippy 双重拦住。
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "json"] }
+# 按天滚动的文件 appender。生产环境不滚动 = 迟早撑爆磁盘。
+tracing-appender = "0.2.5"
+
+[dev-dependencies]
+# ★ 必须给 tauri 开 `test` feature：MockRuntime / get_ipc_response 全在
+# `cfg(any(test, feature = "test"))` 门后。只写在 dev-dependencies 里，
+# 生产构建拿不到这些符号 —— 所以 lib.rs 里绝不能引用 tauri::test。
+tauri = { version = "2.11.5", features = ["test"] }
+# 纵切测试用临时 SQLite 文件，测试结束自动删除。
+tempfile = "3.27.0"
+
+[profile.release]
+# 桌面应用分发包越小越好；这三项是 Tauri 官方推荐值。
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

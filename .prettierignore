@@ -1,0 +1,13 @@
+# 构建产物与依赖
+dist
+node_modules
+src-tauri/target
+src-tauri/gen
+
+# 锁文件由 pnpm 自己维护格式，交给 Prettier 会来回打架
+pnpm-lock.yaml
+Cargo.lock
+
+# 二进制资源：Prettier 不认识，也没必要试
+*.png
+*.ico

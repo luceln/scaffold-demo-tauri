@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+
+    /* 不引 @vue/tsconfig：它带来一层"别人替你决定 strict 程度"的间接，
+       而这份配置只有 20 行，读得完、改得动。 */
+    "types": ["vite/client"],
+    "jsx": "preserve",
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    /* 打开它：`arr[i]` 的类型变成 `T | undefined`。
+       看起来麻烦，但它挡住的是"数组越界访问假装安全"这一类真实 bug。 */
+    "noUncheckedIndexedAccess": true,
+
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue", "vite.config.ts", "eslint.config.mjs"],
+  "exclude": ["dist", "node_modules", "src-tauri/target", "src-tauri/gen"]
+}
